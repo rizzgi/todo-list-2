@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:path_provider/path_provider.dart';
 
 void main() {
@@ -19,7 +20,6 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final _todoController = TextEditingController();
-
   late List _todoList = [];
 
   late Map<String, dynamic> _lastRemoved;
@@ -51,29 +51,57 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LISTA DE TAREFAS'),
+        title: const Text('AFAZERES RÁPIDOS'),
         centerTitle: true,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.blue,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: openModal,
+            ),
+          )
+        ],
       ),
       body: Column(children: [
-        Container(),
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _todoController,
-                  decoration: const InputDecoration(
-                    labelText: "Nova tarefa",
-                    labelStyle: TextStyle(color: Colors.blueAccent),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _todoController,
+                      decoration: const InputDecoration(
+                        labelText: "Nova tarefa",
+                        labelStyle: TextStyle(color: Colors.black38),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: _addTodo,
-                child: const Text("+"),
-                style: ElevatedButton.styleFrom(primary: Colors.blueAccent),
+
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _todoController,
+                    builder: (context, value, child) {
+                      return ElevatedButton(
+                        style: ElevatedButton.styleFrom(primary: Colors.blue),
+                        onPressed: value.text.isNotEmpty
+                            ? () {
+                                _addTodo();
+                              }
+                            : null,
+                        child: Text('Adicionar'),
+                      );
+                    },
+                  ),
+
+                  // ElevatedButton(
+                  //   onPressed: _addTodo,
+                  //   child: const Text("+"),
+                  //   style: ElevatedButton.styleFrom(primary: Colors.green),
+                  // ),
+                ],
               ),
             ],
           ),
@@ -83,6 +111,7 @@ class _HomeState extends State<Home> {
             child: ListView.builder(
                 scrollDirection: Axis.vertical,
                 shrinkWrap: true,
+                reverse: true,
                 padding: const EdgeInsets.only(top: 10),
                 itemCount: _todoList.length,
                 itemBuilder: buildItem),
@@ -118,7 +147,12 @@ class _HomeState extends State<Home> {
           title: Text(_todoList[index]["title"]),
           value: _todoList[index]["ok"],
           secondary: CircleAvatar(
-            child: Icon(_todoList[index]["ok"] ? Icons.check : Icons.error),
+            backgroundColor: Colors.black38,
+            foregroundColor: Colors.white,
+            child: Icon(
+              _todoList[index]["ok"] ? Icons.check : Icons.error,
+              color: _todoList[index]["ok"] ? Colors.white : Colors.red,
+            ),
           ),
           onChanged: (bool? value) {
             setState(() {
@@ -129,6 +163,7 @@ class _HomeState extends State<Home> {
         ),
         onDismissed: (direction) {
           setState(() {
+            if (_todoController.text != null) {}
             _lastRemoved = Map.from(_todoList[index]);
             _lastRemovedPos = index;
             _todoList.removeAt(index);
@@ -181,5 +216,73 @@ class _HomeState extends State<Home> {
     } catch (e) {
       return e.toString();
     }
+  }
+
+  openModal() {
+    showMaterialModalBottomSheet(
+      context: context,
+      builder: (context) => SingleChildScrollView(
+          controller: ModalScrollController.of(context),
+          child: Column(children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  CircleAvatar(
+                    maxRadius: 20,
+                    backgroundColor: Colors.black38,
+                    foregroundColor: Colors.white,
+                    child: Icon(
+                      Icons.check,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Text(
+                      "Tarefas concluídas",
+                      style: TextStyle(color: Colors.black38),
+                    ),
+                  )
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  CircleAvatar(
+                    maxRadius: 20,
+                    backgroundColor: Colors.black38,
+                    foregroundColor: Colors.white,
+                    child: Icon(
+                      Icons.error,
+                      color: Colors.red,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Text(
+                      "Tarefas para fazer",
+                      style: TextStyle(color: Colors.black38),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                   Icon(Icons.arrow_forward),
+                  Text("ARRASTE PARA DIREITA PARA DELETAR A TAREFA", style: TextStyle(fontSize: 12),)
+                ],
+              ),
+            )
+          ])),
+    );
   }
 }
